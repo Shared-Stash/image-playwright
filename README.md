@@ -9,7 +9,7 @@ A hardened Playwright Docker image for GitHub Actions, sized to make `Build Web`
 | Base | `cgr.dev/chainguard/wolfi-base` (Chainguard hardened) |
 | Node | latest Active LTS — currently **24** |
 | Playwright | one image per supported minor (latest 3) |
-| Browsers | Chromium + Firefox + WebKit (preinstalled) |
+| Browsers | **Chromium only** (Firefox + WebKit deps are not in Wolfi — see note below) |
 | Package managers | `npm`, `pnpm`, `yarn` |
 | CLI essentials | `git`, `curl`, `jq`, `bash`, `ca-certificates`, `tzdata` |
 | Native build chain | `python3`, `make`, `gcc`, `g++`, `pkgconf` |
@@ -19,10 +19,19 @@ The slow steps that this image removes from your CI:
 
 | step | typical cost | here |
 |---|---|---|
-| `npx playwright install` | 40–60s | already done |
+| `npx playwright install chromium` | 20–30s | already done |
 | `npx playwright install-deps` | 30s+ | already done |
 | `npm i -g pnpm yarn` | 10–20s | already done |
 | `apt-get install` for `node-gyp` deps | 10s+ | already done |
+
+### Why Chromium only?
+
+The base image is `cgr.dev/chainguard/wolfi-base` — Chainguard's hardened, minimalist distro. Wolfi intentionally does **not** ship GTK, libsoup, libwayland-*, libhyphen, libmanette, libgudev, dbus-glib, or several other libraries that Firefox and WebKit need at runtime (these libs are CVE-prone and excluded by design).
+
+So you have a fork in the road if you need cross-browser E2E:
+
+- For Chromium-only suites (the majority of teams), this image is the smallest, most-hardened option and works out of the box.
+- For Firefox or WebKit suites, use [`mcr.microsoft.com/playwright`](https://mcr.microsoft.com/en-us/product/playwright) instead — Microsoft's official image is Ubuntu-based and ships all three browsers, at the cost of a larger, less-hardened base.
 
 ## Tag scheme
 

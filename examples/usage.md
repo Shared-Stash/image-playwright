@@ -1,5 +1,7 @@
 # Using bitsnbites/playwright in your CI
 
+> **Heads-up:** this image ships **Chromium only**. Wolfi (the hardened base) doesn't include the GTK/libsoup/libwayland deps Firefox and WebKit need. If you need cross-browser E2E, use `mcr.microsoft.com/playwright` for those suites.
+
 ## 1. Drop-in replacement for `setup-node` + `playwright install`
 
 ```yaml

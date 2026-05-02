@@ -5,11 +5,19 @@
 # Built nightly. Tagged as <playwright-version>-node<node-major>, e.g. 1.59-node24.
 # `latest` points at newest-supported Playwright x newest-LTS-Node.
 #
+# Browser scope: CHROMIUM ONLY. We build on Chainguard's Wolfi base
+# (hardened, minimal). Wolfi intentionally does not ship GTK, libsoup,
+# libwayland-*, libhyphen, libmanette, libgudev, etc — they are CVE-prone
+# and not needed for typical container workloads. Firefox and WebKit
+# require those libraries at runtime, so they're omitted from this image.
+# Projects needing cross-browser E2E should use mcr.microsoft.com/playwright
+# or run their Firefox/WebKit suites against a different image.
+#
 # Designed to remove the slowest steps from React/Angular/Node CI:
-#   - `npx playwright install`        (~40-60s)  -> browsers preinstalled
-#   - `npx playwright install-deps`   (~30s+)    -> system libs preinstalled
-#   - global package manager installs (~10-20s)  -> pnpm + yarn preinstalled
-#   - native module build deps        (~10s)     -> python3/make/g++ preinstalled
+#   - `npx playwright install chromium`   (~20-30s)  -> chromium preinstalled
+#   - `npx playwright install-deps`       (~30s+)    -> system libs preinstalled
+#   - global package manager installs     (~10-20s)  -> pnpm + yarn preinstalled
+#   - native module build deps            (~10s)     -> python3/make/gcc preinstalled
 
 ARG NODE_MAJOR=24
 ARG PLAYWRIGHT_VERSION=1.59.1
@@ -47,9 +55,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH=/usr/local/share/pnpm:$PATH \
     NODE_ENV=development
 
-# 1. Core toolchain + package managers + browser system deps
-#    Wolfi uses apk; package names below are the Wolfi/Alpine equivalents
-#    of the deps Microsoft installs via `playwright install-deps` on Debian.
+# 1. Core toolchain + package managers + Chromium system deps.
+#    Wolfi packs the C++ compiler into the `gcc` package (no separate g++).
+#    Wolfi does NOT ship GTK, libsoup, libwayland-*, libhyphen, libmanette,
+#    libgudev, at-spi2-atk, dbus-glib, etc — that's why this image is
+#    Chromium-only. Don't add Firefox/WebKit deps back without first
+#    confirming Wolfi has them (`apk search <name>`).
 USER root
 # Intentionally NOT pinning apk versions. This image is rebuilt nightly
 # specifically to pick up the latest patched packages from the Chainguard
@@ -59,27 +70,19 @@ RUN apk update && apk add --no-cache \
       # core CLI / CI tooling
       bash coreutils findutils grep sed gawk \
       git curl jq ca-certificates tzdata \
-      # native module build chain
-      python-3 py3-pip make gcc g++ pkgconf \
+      # native module build chain (gcc covers C and C++ on Wolfi)
+      python-3 py3-pip make gcc pkgconf \
       # node + npm (matches NODE_MAJOR if available; otherwise newest in repo)
       "nodejs-${NODE_MAJOR}" npm \
-      # font + rendering libs (chromium / firefox / webkit common)
+      # font + rendering libs
       font-noto font-noto-emoji font-noto-cjk fontconfig freetype \
       libstdc++ libgcc glibc-locale-en \
-      # X / GL / wayland / GTK runtime libs needed by browsers
+      # Chromium runtime deps (X11, mesa, atk, audio, etc)
       libnss libnspr libatk-1.0 libatk-bridge-2.0 cups-libs \
       libxkbcommon libxcomposite libxdamage libxfixes libxrandr \
       libxshmfence mesa-gbm mesa-egl mesa-gles \
       pango cairo libdrm \
-      libwayland-client libwayland-server libwayland-egl libwayland-cursor \
-      gtk3 gtk-4.0 \
-      alsa-lib at-spi2-core at-spi2-atk libxss \
-      # webkit-specific
-      gstreamer gst-plugins-base harfbuzz-icu libwebp libsecret libhyphen \
-      libevent enchant2 libmanette libgudev libavif libxslt \
-      libsoup-3 woff2 \
-      # firefox-specific
-      dbus-glib \
+      alsa-lib at-spi2-core libxss \
     && rm -rf /var/cache/apk/*
 
 # 2. Global JS package managers
@@ -87,16 +90,16 @@ RUN npm install -g --no-audit --no-fund \
       "pnpm@latest" \
       "yarn@1.22.x"
 
-# 3. Playwright + browsers (pinned)
+# 3. Playwright + Chromium (pinned)
 #    Install playwright globally so `npx playwright` works without a local
-#    install, and run `playwright install` (NOT --with-deps; we already
-#    installed deps via apk above, since playwright's own --with-deps is
-#    Debian-only and would fail on Wolfi).
+#    install, and run `playwright install chromium` (NOT --with-deps; we
+#    already installed deps via apk above, and playwright's own --with-deps
+#    is Debian-only — would fail on Wolfi).
 RUN npm install -g --no-audit --no-fund \
       "playwright@${PLAYWRIGHT_VERSION}" \
       "@playwright/test@${PLAYWRIGHT_VERSION}" \
     && mkdir -p "${PLAYWRIGHT_BROWSERS_PATH}" \
-    && playwright install chromium firefox webkit \
+    && playwright install chromium \
     && chmod -R a+rx "${PLAYWRIGHT_BROWSERS_PATH}"
 
 # 4. User for CI safety
