@@ -40,6 +40,12 @@ jobs:
       # owns the matching DOCKERHUB_TOKEN. Migrate to a real bitsnbites
       # Docker Hub org later if desired and update this value.
       dockerhub_namespace: bitsnbites010
+      # amd64 only for now. The reusable workflow defaults to multi-arch
+      # but we're dropping arm64 because (a) almost all GitHub-hosted
+      # runners are amd64, (b) the arm64 Chromium binary CDN has been
+      # flaky, (c) it doubled build time. Add `linux/arm64` back when a
+      # known consumer needs native arm support.
+      platforms: linux/amd64
       dry_run_cleanup: ${{ inputs.dry_run_cleanup || false }}
       force_build: ${{ inputs.force_build || false }}
     secrets:

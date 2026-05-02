@@ -13,7 +13,7 @@ A hardened Playwright Docker image for GitHub Actions, sized to make `Build Web`
 | Package managers | `npm`, `pnpm`, `yarn` |
 | CLI essentials | `git`, `curl`, `jq`, `bash`, `ca-certificates`, `tzdata` |
 | Native build chain | `python3`, `make`, `gcc`, `g++`, `pkgconf` |
-| Architectures | `linux/amd64`, `linux/arm64` |
+| Architectures | `linux/amd64` (arm64 dropped — see below) |
 
 The slow steps that this image removes from your CI:
 
@@ -23,6 +23,10 @@ The slow steps that this image removes from your CI:
 | `npx playwright install-deps` | 30s+ | already done |
 | `npm i -g pnpm yarn` | 10–20s | already done |
 | `apt-get install` for `node-gyp` deps | 10s+ | already done |
+
+### Why amd64 only?
+
+Default GitHub-hosted runners (`runs-on: ubuntu-latest`) are amd64, which covers the vast majority of consumers. arm64 was originally enabled but dropped because (a) the arm64 Chromium binary download from the Playwright CDN was repeatedly flaky on first build, (b) every build was running through QEMU emulation, roughly doubling nightly time, and (c) we don't have a known arm64 consumer yet. Apple Silicon devs running the image locally will fall back to Rosetta — slow but functional. Add `platforms: linux/amd64,linux/arm64` back to `nightly.yml` when there's a real arm consumer.
 
 ### Why Chromium only?
 
