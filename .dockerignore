@@ -1,0 +1,8 @@
+# Keep the build context tiny — nothing in this repo needs to land in the image.
+.git
+.github
+README.md
+LICENSE
+examples
+scripts
+*.md

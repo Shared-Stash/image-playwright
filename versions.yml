@@ -1,0 +1,42 @@
+# Versions config consumed by Shared-Stash/workflows get-versions.py.
+#
+# Declares which Playwright x Node combinations this image should build
+# tonight. The script fetches each axis from its source on every nightly
+# run, so we're always tracking what's currently supported by upstream.
+
+axes:
+
+  pw:
+    # Playwright doesn't have an endoflife.date entry. Track the latest
+    # 3 minors from the GitHub releases feed — that's roughly 3-6 months
+    # of coverage and matches how teams pin Playwright in package.json.
+    source: github-releases
+    repo: microsoft/playwright
+    keep_minors: 3
+    include_prereleases: false
+
+  node:
+    # Node IS on endoflife.date. Take only LTS lines that haven't hit
+    # EOL, and only Node 22+ (Node 20 reached EOL on 2026-04-30).
+    source: endoflife
+    product: nodejs
+    only_lts: true
+    min_major: 22
+
+# Tag templates. Each combo gets every tag listed here, plus "latest"
+# if it matches latest_when below.
+tag_key: "{pw.minor}-node{node.cycle}"
+tags:
+  - "{pw.minor}-node{node.cycle}"        # rolling minor pin (recommended)
+  - "{pw.full}-node{node.cycle}"         # exact patch pin
+
+# The combo where pw.full == newest pw.full AND node.cycle == newest
+# node.cycle gets the moving "latest" tag.
+latest_when:
+  pw: full
+  node: cycle
+
+# Passed to docker build --build-arg for every matrix entry.
+build_args:
+  PLAYWRIGHT_VERSION: "{pw.full}"
+  NODE_MAJOR:         "{node.cycle}"

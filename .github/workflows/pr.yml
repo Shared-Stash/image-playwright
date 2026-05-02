@@ -1,0 +1,29 @@
+name: PR Validation
+
+# Thin caller for the Shared-Stash/workflows reusable pr-validate.yml.
+
+on:
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "versions.yml"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: Shared-Stash/workflows/.github/workflows/pr-validate.yml@main
+    with:
+      image_name: playwright
+      versions_config_path: versions.yml
+      smoke_command: |
+        set -e
+        node --version
+        npm --version
+        pnpm --version
+        yarn --version
+        playwright --version
+        ls -la "$PLAYWRIGHT_BROWSERS_PATH"

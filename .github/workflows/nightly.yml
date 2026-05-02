@@ -1,0 +1,42 @@
+name: Nightly Build
+
+# Thin caller for the Shared-Stash/workflows reusable ci-image.yml.
+# Everything (matrix resolution from versions.yml + skip-gate + multi-arch
+# build + deprecate + 90-day cleanup) lives in the reusable workflow.
+
+on:
+  schedule:
+    - cron: "0 6 * * *"            # 06:00 UTC nightly
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "versions.yml"
+      - ".github/workflows/**"
+  workflow_dispatch:
+    inputs:
+      dry_run_cleanup:
+        description: "Cleanup runs in dry-run mode (no deletions)"
+        type: boolean
+        default: false
+      force_build:
+        description: "Bypass the skip-if-unchanged gate"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  ci:
+    uses: Shared-Stash/workflows/.github/workflows/ci-image.yml@main
+    with:
+      image_name: playwright
+      versions_config_path: versions.yml
+      tag_pattern: "^[0-9]+\\.[0-9]+(\\.[0-9]+)?-node[0-9]+$"
+      dry_run_cleanup: ${{ inputs.dry_run_cleanup || false }}
+      force_build: ${{ inputs.force_build || false }}
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
