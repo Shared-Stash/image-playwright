@@ -64,10 +64,10 @@ container: ghcr.io/shared-stash/playwright:1.59.1-node24
 
 ## 5. Docker Hub mirror
 
-Same image, mirrored.
+Same image, mirrored to the `bitsnbites010` namespace on Docker Hub.
 
 ```yaml
-container: bitsnbites/playwright:1.59-node24
+container: bitsnbites010/playwright:1.59-node24
 ```
 
 ## 6. Self-hosted arm64 runners

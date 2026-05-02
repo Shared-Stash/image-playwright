@@ -44,7 +44,7 @@ ghcr.io/shared-stash/playwright:1.58-node22      # older minor + older LTS
 ghcr.io/shared-stash/playwright:latest           # newest x newest
 ```
 
-Mirrored to `docker.io/bitsnbites/playwright:*` with identical tags.
+Mirrored to `docker.io/bitsnbites010/playwright:*` with identical tags. (The Docker Hub namespace is `bitsnbites010` â€” the `bitsnbites` org name only exists on GitHub.)
 
 ## Support policy
 
@@ -96,7 +96,7 @@ The nightly workflow itself is a single `uses:` of the reusable `ci-image.yml` â
 |---|---|
 | `GITHUB_TOKEN` | provided automatically. Needs `packages: write` (set in workflow). |
 | `DOCKERHUB_USERNAME` | Docker Hub robot account. |
-| `DOCKERHUB_TOKEN` | Docker Hub access token (with read/write/delete on `bitsnbites/playwright`). |
+| `DOCKERHUB_TOKEN` | Docker Hub access token (with read/write/delete on `bitsnbites010/playwright`). |
 
 ## Layout
 

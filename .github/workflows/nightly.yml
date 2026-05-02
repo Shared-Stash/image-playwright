@@ -35,6 +35,11 @@ jobs:
       image_name: playwright
       versions_config_path: versions.yml
       tag_pattern: "^[0-9]+\\.[0-9]+(\\.[0-9]+)?-node[0-9]+$"
+      # Docker Hub mirror namespace: the bitsnbites org doesn't exist on
+      # Docker Hub (only on GitHub), so we use the personal account that
+      # owns the matching DOCKERHUB_TOKEN. Migrate to a real bitsnbites
+      # Docker Hub org later if desired and update this value.
+      dockerhub_namespace: bitsnbites010
       dry_run_cleanup: ${{ inputs.dry_run_cleanup || false }}
       force_build: ${{ inputs.force_build || false }}
     secrets:
