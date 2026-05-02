@@ -95,11 +95,20 @@ RUN npm install -g --no-audit --no-fund \
 #    install, and run `playwright install chromium` (NOT --with-deps; we
 #    already installed deps via apk above, and playwright's own --with-deps
 #    is Debian-only — would fail on Wolfi).
+#    We've seen sporadic "Download failure, code=null" from the
+#    Chrome-for-Testing CDN. Wrap with up to 3 attempts (5s, 15s backoff)
+#    so a single transient blip doesn't kill the nightly.
 RUN npm install -g --no-audit --no-fund \
       "playwright@${PLAYWRIGHT_VERSION}" \
       "@playwright/test@${PLAYWRIGHT_VERSION}" \
     && mkdir -p "${PLAYWRIGHT_BROWSERS_PATH}" \
-    && playwright install chromium \
+    && for attempt in 1 2 3; do \
+         echo "==> playwright install chromium (attempt $attempt/3)" && \
+         playwright install chromium && break; \
+         echo "==> attempt $attempt failed; sleeping..." >&2; \
+         sleep $(( attempt * 10 )); \
+         [ "$attempt" = "3" ] && exit 1 || true; \
+       done \
     && chmod -R a+rx "${PLAYWRIGHT_BROWSERS_PATH}"
 
 # 4. User for CI safety
